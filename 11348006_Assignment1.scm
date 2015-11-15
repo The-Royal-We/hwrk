@@ -11,15 +11,31 @@
 ;;'(λ c b)
 
 (define free-variables (λ (exp)
-                         (cond [(empty? exp) '()]
-                               [(list? exp)
+                         (cond [(null? exp) '()]
+                               [(pair? exp)
                                 (cond [(member (car exp) '(λ))
-                                       (free-variables-a (cdr exp) (cadr exp))]
-                                      [else (cons (car exp) (free-variables (cadr exp)))])]
-                         [else (cond [(equal? exp 'λ) '()]
-                                     [else (cons exp '())])])))
+                                       (append (deep-filter (λ (expression) (not (equal? (cadr exp) expression))) (cdr exp)) (cdr exp)) (free-variables (cdr exp)) ]
+                                       ;;(filter (bound? (cadr exp) (cdr exp)))]
+                                      [else (append (car exp) (free-variables (cadr exp)))])]
+                         [else (append '(exp) '())])))
 
- (define free-variables-a (λ (exp bounded) ()))
+(define (deep-filter f lst)
+  (cond ((null? lst)
+         '())
+        ((atom? (car lst))
+         (if (f (car lst))
+             (cons (car lst) (deep-filter f (cdr lst)))
+             (deep-filter f (cdr lst))))
+        (else
+         (filter (compose not null?)
+                 (cons (deep-filter f (car lst)) 
+                       (deep-filter f (cdr lst)))))))                                      
+                                 
+
+(define atom?
+  (λ (x)
+    (and (not (pair? x)) (not (null? x)))))
+
 
 (define (flatmap f list)
   apply append (map f list))
@@ -30,4 +46,11 @@
           (else (append (flatten (car x))
                         (flatten (cdr x))))))
 
-(flatmap (λ (xs) (filter (λ (exp) (not (equal? 'λ exp))) xs)) '((a b) (λ c ((d c) (e b)))) )
+(define (deep-map f l)
+  (let deep ((x l))
+    (cond [(null? x) x]
+          [(pair? x) (map deep x)]
+          [else (f x)])))
+
+;;(flatmap (λ (xs) (filter (λ (exp) (not (equal? 'λ exp))) xs)) '((a b) (λ c ((d c) (e b)))) )#
+(free-variables '((a b) (λ c ((d c) (e b)))))
