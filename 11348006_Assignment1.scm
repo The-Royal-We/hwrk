@@ -11,13 +11,23 @@
 ;;'(λ c b)
 
 (define free-variables (λ (exp)
+;;                         (println exp)
                          (cond [(null? exp) '()]
+                               [(symbol? exp) (append (cons exp '()))]
                                [(pair? exp)
                                 (cond [(member (car exp) '(λ))
-                                       (append (deep-filter (λ (expression) (not (equal? (cadr exp) expression))) (cdr exp)) (cdr exp)) (free-variables (cdr exp)) ]
+                                       (free-variables (deep-filter (λ (expression) (not (equal? (cadr exp) expression))) (cdr exp))) ]
                                        ;;(filter (bound? (cadr exp) (cdr exp)))]
-                                      [else (append (car exp) (free-variables (cadr exp)))])]
-                         [else (append '(exp) '())])))
+                                      [else
+                                       (println (cadr exp))
+                                       (append (cons (car exp) '())
+                                               (free-variables (caar exp)))])]
+                         [else println exp ])))
+
+
+;;((a b) (λ c ((d c) (e b)))))
+
+
 
 (define (deep-filter f lst)
   (cond ((null? lst)
@@ -40,12 +50,6 @@
 (define (flatmap f list)
   apply append (map f list))
 
-(define (flatten x)
-    (cond ((null? x) '())
-          ((not (pair? x)) (list x))
-          (else (append (flatten (car x))
-                        (flatten (cdr x))))))
-
 (define (deep-map f l)
   (let deep ((x l))
     (cond [(null? x) x]
@@ -53,4 +57,4 @@
           [else (f x)])))
 
 ;;(flatmap (λ (xs) (filter (λ (exp) (not (equal? 'λ exp))) xs)) '((a b) (λ c ((d c) (e b)))) )#
-(free-variables '((a b) (λ c ((d c) (e b)))))
+(remove-duplicates (flatten (free-variables '((a b) (λ c ((d c) (e b)))))))
